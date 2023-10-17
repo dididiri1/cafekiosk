@@ -166,3 +166,148 @@ class CafeKioskTest {
 - 키오스크 주문을 위한 상품 후보 리스트 조회하기
 - 상품의 판매 상태: 판매중, 판매보류, 판매중지 ->  판매중, 판매보류인 상태의 상품을 화면에 보여준다.
 - id, 상품 번호, 상품 타입, 판매 상태, 상품 이름, 가격
+
+
+#### application.yml
+``` yml
+spring:
+  profiles:
+    default: local
+
+  datasource:
+    url: jdbc:h2:mem:~/cafeKioskApplication
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    defer-datasource-initialization: true # (2.5~) Hibernate 초기화 이후 data.sql 실행
+
+  h2:
+    console:
+      enabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  sql:
+    init:
+      mode: never
+``` 
+
+### defer-datasource-initialization 옵션
+- data.sql 쿼리를 Hibernate가 시작할때 자동으로 생성해줌.
+
+#### data.sql
+``` sql
+insert into product(product_number, type, selling_status, name, price)
+values ('001', 'HANDMADE', 'SELLING', '아메리카노', 4000),
+       ('002', 'HANDMADE', 'HOLD', '카페라떼', 4500),
+       ('003', 'BAKERY', 'STOP_SELLING', '크루아상', 3500);
+``` 
+
+``` java
+package sample.cafekiosk.spring.domain.product;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.jupiter.api.Assertions.*;
+import static sample.cafekiosk.spring.domain.product.ProductSellingStatus.*;
+import static sample.cafekiosk.spring.domain.product.ProductType.HANDMADE;
+
+//@SpringBootTest
+@ActiveProfiles("test")
+@DataJpaTest // JPA 전용
+class ProductRepositoryTest {
+
+    @Autowired
+    private ProductRepository productRepository;
+
+    @DisplayName("원하는 판매상태를 가진 상품들을 조회한다.")
+    @Test
+    void findAllBySellingStatusIn() throws Exception {
+        //given
+        Product product1 = Product.builder()
+                .productNumber("001")
+                .type(HANDMADE)
+                .sellingStatus(SELLING)
+                .name("아메리카노")
+                .price(4000)
+                .build();
+
+        Product product2 = Product.builder()
+                .productNumber("002")
+                .type(HANDMADE)
+                .sellingStatus(HOLD)
+                .name("카페라떼")
+                .price(4500)
+                .build();
+
+        Product product3 = Product.builder()
+                .productNumber("003")
+                .type(HANDMADE)
+                .sellingStatus(STOP_SELLING)
+                .name("팥빙수")
+                .price(7000)
+                .build();
+
+        productRepository.saveAll(List.of(product1, product2, product3));
+
+        //when
+        List<Product> products = productRepository.findAllBySellingStatusIn(List.of(SELLING, HOLD));
+
+
+        //then
+        // 리스트에 검증 하는 법
+        // 1. 사이즈 체크
+        assertThat(products).hasSize(2)
+                .extracting("productNumber", "name", "sellingStatus")
+                .containsExactlyInAnyOrder(
+                        tuple("001", "아메리카노", SELLING),
+                        tuple("002", "카페라떼", HOLD)
+                );
+
+    }
+}
+``` 
+
+### 리스트 테스트 방법
+- 리스트 사이즈 검증 - hasSize()
+- 필드 이름 검증 - extracting()
+- 필드 값 검증 - containsExactlyInAnyOrder(tuple(), tuple(), ..)
