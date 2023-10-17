@@ -294,8 +294,6 @@ class ProductRepositoryTest {
 
 
         //then
-        // 리스트에 검증 하는 법
-        // 1. 사이즈 체크
         assertThat(products).hasSize(2)
                 .extracting("productNumber", "name", "sellingStatus")
                 .containsExactlyInAnyOrder(
@@ -311,3 +309,24 @@ class ProductRepositoryTest {
 - 리스트 사이즈 검증 - hasSize()
 - 필드 이름 검증 - extracting()
 - 필드 값 검증 - containsExactlyInAnyOrder(tuple(), tuple(), ..)
+
+
+![](https://github.com/dididiri1/cafekiosk/blob/main/study/images/05_01.png?raw=true)
+
+### Persistence Layer
+- Data Access의 역활
+- 비즈니스 가공 로직이 포함되어서는 안 된다.
+- Data에 대한 CRUD에만 집중한 레이어
+
+### Business Layer
+- 비즈니스 로직을 구현하는 역할
+- Persistence Layer와의 상호작용(Data를 읽고 쓰는 행위)을 통해 비즈니스 로직을 전개시킨다.
+- **트랜잭션**을 보장해야 한다.
+
+### 요구사항
+- 상품 번호 리스트를 받아 주문 생성하기
+- 주문은 주문 상태, 주문 등록 시간을 가진다.
+- 주문의 총 금액을 계산할 수 있어야 한다.
+
+
+
