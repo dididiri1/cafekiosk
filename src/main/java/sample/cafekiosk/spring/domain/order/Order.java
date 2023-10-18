@@ -3,6 +3,7 @@ package sample.cafekiosk.spring.domain.order;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import sample.cafekiosk.spring.domain.BaseEntity;
 import sample.cafekiosk.spring.domain.orderproduct.OrderProduct;
 import sample.cafekiosk.spring.domain.product.Product;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity(name = "orders")
+@ToString
 public class Order extends BaseEntity {
 
     @Id
