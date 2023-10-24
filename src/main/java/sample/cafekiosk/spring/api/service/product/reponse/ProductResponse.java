@@ -28,7 +28,6 @@ public class ProductResponse {
     }
 
     public static ProductResponse of(Product product) {
-
         return ProductResponse.builder()
                 .id(product.getId())
                 .productNumber(product.getProductNumber())

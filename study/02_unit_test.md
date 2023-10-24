@@ -313,12 +313,12 @@ class ProductRepositoryTest {
 
 ![](https://github.com/dididiri1/cafekiosk/blob/main/study/images/05_01.png?raw=true)
 
-### Persistence Layer
+### Persistence Layer(퍼시스턴스)
 - Data Access의 역활
 - 비즈니스 가공 로직이 포함되어서는 안 된다.
 - Data에 대한 CRUD에만 집중한 레이어
 
-### Business Layer
+### Business Layer(비즈니스)
 - 비즈니스 로직을 구현하는 역할
 - Persistence Layer와의 상호작용(Data를 읽고 쓰는 행위)을 통해 비즈니스 로직을 전개시킨다.
 - **트랜잭션**을 보장해야 한다.
@@ -333,5 +333,59 @@ class ProductRepositoryTest {
 - 재고는 상품번호를 가진다.
 - 재고와 관련 있는 상품 타입은 병 음료, 베이커리이다.
 
+### Presentation Layer(프레젠테이션)
+
+- 외부 세계의 요청을 가장 먼저 받는 계층
+- 파라미터에 대한 최소한의 검증을 수행한다.
+
+### MockMvc
+- Mock(가짜, 대여) 객체를 사용해
+  - 스프링 MVC 동작을 재현할 수 있는 테스트 프레임워크
+
+### 요구사항 3
+
+![](https://github.com/dididiri1/cafekiosk/blob/main/study/images/05_02.png?raw=true)
+
+- 관리자 페이지에서 신규 상품을 등록할 수 있다.
+- 상품명, 상품 타입, 판매 상태, 가격 등을 입력받는다.
 
 
+### @Transactional(readOnly = true)
+
+- readOnly = ture : 읽기전용
+- CRUD 에서 CUD 동작 x / only Read
+- JPA : CUD 스냅샷 저장, 변경감지 X (성능 향상)
+- CQRS - Command / Query 용으로 서비스로 분리를 하자
+- Master DB(쓰기용), Slave DB(읽기용) readOnly 값으로 구분해서 나눌수 있음
+- createProduct(command, CUD) @Transactional(readOnly = false)
+- getSellingProducts(Query, R) @Transactional(readOnly = true)
+- Service에 전체적으로 @Transactional(readOnly = true) 걸고 CUD 메소드에 따로 설정
+
+
+``` java
+@Transactional(readOnly = true)
+@RequiredArgsConstructor
+@Service
+public class ProductService {
+
+    private final ProductRepository productRepository;
+
+    @Transactional
+    public ProductResponse createProduct(ProductCreateRequest request) {
+        String nextProductNumber = createNextProductNumber();
+
+        Product product = request.toEntity(nextProductNumber);
+        Product saveProduct = productRepository.save(product);
+
+        return ProductResponse.of(saveProduct);
+    }
+
+    public List<ProductResponse> getSellingProducts() {
+        List<Product> products = productRepository.findAllBySellingStatusIn(ProductSellingStatus.forDisplay());
+
+        return products.stream()
+                .map(product -> ProductResponse.of(product))
+                .collect(Collectors.toList());
+    }
+}
+``` 
