@@ -32,7 +32,6 @@ public class ProductService {
     @Transactional
     public ProductResponse createProduct(ProductCreateRequest request) {
         String nextProductNumber = createNextProductNumber();
-
         Product product = request.toEntity(nextProductNumber);
         Product saveProduct = productRepository.save(product);
 

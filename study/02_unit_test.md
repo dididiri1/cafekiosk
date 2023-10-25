@@ -341,6 +341,7 @@ class ProductRepositoryTest {
 ### MockMvc
 - Mock(가짜, 대여) 객체를 사용해
   - 스프링 MVC 동작을 재현할 수 있는 테스트 프레임워크
+  - 실제 객체를 만들어서 테스트하기 어려운 경우 가짜 객체를 만들어서 테스트하는 기술
 
 ### 요구사항 3
 
@@ -389,3 +390,137 @@ public class ProductService {
     }
 }
 ``` 
+
+### @WebMvcTest
+- Controller 빈들만 주입 받아서 사용하는 가벼운 테스트
+``` java
+package sample.cafekiosk.spring.api.controller.product;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.web.servlet.MockMvc;
+import sample.cafekiosk.spring.api.service.product.ProductService;
+import sample.cafekiosk.spring.domain.product.ProductRepository;
+
+@WebMvcTest
+class ProductControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc; // 주입 O
+    
+    @Autowired
+    private ProductController productController; // 주입 O
+    
+    @Autowired
+    private ProductService productService; // 주입 X
+    
+    @Autowired
+    private ProductRepository productRepository; // 주입 X
+    
+}
+``` 
+
+### @MockBean 
+- @MockBean 사용하면 service, repository 주입 가능 
+``` java
+package sample.cafekiosk.spring.api.controller.product;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.web.servlet.MockMvc;
+import sample.cafekiosk.spring.api.service.product.ProductService;
+import sample.cafekiosk.spring.domain.product.ProductRepository;
+
+@WebMvcTest
+class ProductControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc; // 주입 O
+    
+    @Autowired
+    private ProductController productController; // 주입 O
+    
+    @MockBean
+    private ProductService productService; // 주입 O
+    
+    @MockBean
+    private ProductRepository productRepository; // 주입 O
+    
+}
+``` 
+
+### JpaAuditing 
+- 생성일, 수정일 자동 시간을 매핑해서 넣어줌.
+
+- 1. @EntityListeners(AuditingEntityListener.class) 어노테이션 추가
+``` java
+package sample.cafekiosk.spring.domain;
+
+import lombok.Getter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import javax.persistence.EntityListeners;
+import javax.persistence.MappedSuperclass;
+import java.time.LocalDateTime;
+
+@Getter
+@MappedSuperclass
+@EntityListeners(AuditingEntityListener.class)
+public abstract class BaseEntity {
+
+    @CreatedDate
+    private LocalDateTime createDateTime;
+
+    @LastModifiedDate
+    private LocalDateTime modifiedDateTime;
+
+}
+
+``` 
+
+- 2. @EnableJpaAuditing 어노테이션 추가(자주 까먹을수도 있음)
+``` java
+package sample.cafekiosk.spring;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+
+@EnableJpaAuditing
+@SpringBootApplication
+public class CafekioskApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(CafekioskApplication.class, args);
+    }
+
+}
+
+``` 
+
+### 참고
+> MockMvc 테스트시 @WebMvcTest JPA 빈들을 주입받지 않기 때문에 문제가 발생한다.  
+> 따라서 config로 분리해서 문제를 해결해야된다.
+``` java
+package sample.cafekiosk.spring.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+
+@EnableJpaAuditing
+@Configuration
+public class JapAuditingConfig {
+
+}
+``` 
+
+### @NotNull, @NotEmpty, @NotBlank
+- @NotNull는 null만 허용하지 않고 ""이나 " "은 허용됨
+- @NotEmpty는 null, "", 허용하지 않지만 " "은 허용됨
+- @NotBlank는 null, "", " " 모두 허용하지 않습니다.
+
+> 참고: String 타입은 @NotBlank 하고 enum 타입은 @NotNull를 사용하자.
+> 
