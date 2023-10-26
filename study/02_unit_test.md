@@ -33,18 +33,13 @@
 - 테스트하기 쉬운 코드
 
 ### 키워드 정리
-
 - 단위 테스트
-
 - 수동 테스트, 자동화 테스트
-
 - Junit5, AssertJ
-
 - 해피 케이스, 예외 케이스
-
 - 경계값 테스트 - 범위(이상, 이하, 초과, 미만), 구간, 날짜 등
-
 - 테스트하기 쉬운/어려운 영역(순수함수)
+
 
 ## 섹션 3 TDD: Test Driven Development
 
@@ -523,4 +518,74 @@ public class JapAuditingConfig {
 - @NotBlank는 null, "", " " 모두 허용하지 않습니다.
 
 > 참고: String 타입은 @NotBlank, enum 타입은 @NotNull, List 타입은 @NotEmpty 사용하자.
-> 
+
+### 키워드 정리
+- Layered Architecture
+- Hexagonal Architecture
+- 단위 테스트 VS. 통합 테스트
+- IoC, DI, AOP
+- ORM, 패러다임의 불일치, Hibernate
+- Spring Data JPA
+- QueryDSL - 타입체크, 동적쿼리
+  - 장점 : 빌더 패턴, 컴파일 단계에서 에러가 나면 잡을수 있고, 동적쿼리(where 조건)
+
+### 키워드 정리
+- @SpringBootTest VS. @DataJpaTest
+- @SpringBootTest VS. @WebMvcTest
+- @Transactional (readOnly = true)
+- Optimistic Lock(낙관적 락), Pessimistic Lock(비관적 락)
+- CQRS
+
+### 키워드 정리
+- @WebMvcTest
+- ObjectMapper
+- @RestControllerAdvice, @ExceptionHandler
+- Spring bean validation
+- @NotNull, @NotEmpty, @NotBlank, …
+- Mock, Mockito, @MockBean
+
+## 섹션 6 Mock을 마주하는 자세
+
+![](https://github.com/dididiri1/cafekiosk/blob/main/study/images/06_01.png?raw=true)
+
+### JPQL
+``` java
+@Repository
+public interface OrderRepository extends JpaRepository<Order, Long> {
+
+    @Query("select o from Order o where o.registeredDateTime >= :startDateTime" +
+            " and o.registeredDateTime < :endDateTime" +
+            " and o.orderStatus = :orderStatus")
+    List<Order> findOrdersBy(LocalDateTime startDateTime, LocalDateTime endDateTime, OrderStatus orderStatus);
+
+}
+``` 
+
+### Native Query
+``` java
+@Repository
+public interface OrderRepository extends JpaRepository<Order, Long> {
+
+    @Query(value = "select o from Order o where o.registeredDateTime >= :startDateTime" +
+            " and o.registeredDateTime < :endDateTime" +
+            " and o.orderStatus = :orderStatus", nativeQuery = true)
+    List<Order> findOrdersBy(LocalDateTime startDateTime, LocalDateTime endDateTime, OrderStatus orderStatus);
+    
+}
+``` 
+
+### Stubbing(스터빙)
+- Mock객체의 when 메소드를 이용한 stubbing 사용법
+``` java
+Mockito.when(mailSendClient.sendEmail(any(String.class), any(String.class), any(String.class), any(String.class)))
+                .thenReturn(true);
+```
+|        메소드         |                    기능                     |
+|:------------------:|:-----------------------------------------:|
+|     thenReturn     |      스터빙한 메소드 호출 후 어떤 객체를 리턴할 건지 정의       |
+|     thenThrow      | 스터빙한 메소드 호출 후 어떤 Exception을 Throw할 건지 정의  |
+| thenCallRealMethod |                 실제 메소드 호출                 |
+
+> 참고 : OrderStatistService.java 메일 전송 로직에는 @Transactional 안하는게 좋음   
+>       이메일 전송 같이 긴 네트워크 작업이 있는 로직은 불필요함.
+ 
