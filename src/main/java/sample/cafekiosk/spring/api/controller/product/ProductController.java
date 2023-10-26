@@ -18,8 +18,7 @@ public class ProductController {
 
     @PostMapping("/api/v1/products/new")
     public ApiResponse<ProductResponse> createProduct(@RequestBody @Valid ProductCreateRequest request) {
-        System.out.println("cc");
-        return ApiResponse.ok(productService.createProduct(request));
+        return ApiResponse.ok(productService.createProduct(request.toServiceRequest()));
     }
 
     @GetMapping("/api/v1/products/selling")

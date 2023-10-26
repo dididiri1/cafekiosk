@@ -522,5 +522,5 @@ public class JapAuditingConfig {
 - @NotEmpty는 null, "", 허용하지 않지만 " "은 허용됨
 - @NotBlank는 null, "", " " 모두 허용하지 않습니다.
 
-> 참고: String 타입은 @NotBlank 하고 enum 타입은 @NotNull를 사용하자.
+> 참고: String 타입은 @NotBlank, enum 타입은 @NotNull, List 타입은 @NotEmpty 사용하자.
 > 
