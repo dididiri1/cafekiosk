@@ -58,14 +58,4 @@ public class Order extends BaseEntity {
                 .sum();
     }
 
-    @Override
-    public String toString() {
-        return "Order{" +
-                "id=" + id +
-                ", orderStatus=" + orderStatus +
-                ", totalPrice=" + totalPrice +
-                ", registeredDateTime=" + registeredDateTime +
-                ", orderProducts=" + orderProducts +
-                '}';
-    }
 }

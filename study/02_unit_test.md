@@ -588,4 +588,22 @@ Mockito.when(mailSendClient.sendEmail(any(String.class), any(String.class), any(
 
 > 참고 : OrderStatistService.java 메일 전송 로직에는 @Transactional 안하는게 좋음   
 >       이메일 전송 같이 긴 네트워크 작업이 있는 로직은 불필요함.
- 
+
+## Test Double
+### Dummy 
+- 아무 것도 하지 않는 깡통 객체
+
+### Fake
+- 단순한 형태로 동일한 기능은 수행하나, 프로덕션에서 쓰기에는 부족한 객체
+
+### Spy
+- Stub이면서 호출된 내용을 기록하여 보여줄 수 있는 객체
+- 일부는 실제 객체처럼 동작시키고 일부만 Stubbing할 수 있다.
+
+### Stub 행위 검증 (Behavior Verification)
+- 테스트에서 요청한 것에 대해 미리 준비한 결과를 제공하는 객체 그 외에는 응답하지 않는다.
+
+### Mock 상태 검증 (State Verification)
+- 행위에 대한 기대를 명세하고, 그에 따라 동작하도록 만들어진 객체
+
+
