@@ -606,4 +606,121 @@ Mockito.when(mailSendClient.sendEmail(any(String.class), any(String.class), any(
 ### Mock 상태 검증 (State Verification)
 - 행위에 대한 기대를 명세하고, 그에 따라 동작하도록 만들어진 객체
 
+## 순수 Mockito로 검증해보기
 
+### Mockito 검증 방법
+|       메소드       |        기능         |
+|:---------------:|:-----------------:|
+|  times(int n)   |   몇번 호출 했는지 검증    |
+|     never()     | 한 번도 호출 되지 않는지 검증 |
+|  atLeastOne()   | 최소 한번은 호츨 됬는지 검증  |
+| atLeast(int n)  |  최소 n번 호출 됬는지 검증  |
+|  atMostOnce()   | 최대 한번은 호출 됬는지 검증  |
+|  atMost(int n)  |  최대 n번 호출 됬는지 검증  |
+|  calls(int n)   |   n번이 호출 됬는지 검증   |
+|     only()      | 해당 메소드만 실행 됬는지 검증 |
+| timeout(long n) |      타임아웃 검증      |
+|  after(long n)  |     걸리는 시간 검증     |
+| description() |     실패 문구 검증      |
+| InOrder |       순서 검증       |
+
+### @Mock
+``` java
+package sample.cafekiosk.spring.api.service.mail;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
+import sample.cafekiosk.spring.cliemt.mail.MailSendClient;
+import sample.cafekiosk.spring.domain.history.mail.MailSendHistory;
+import sample.cafekiosk.spring.domain.history.mail.MailSendHistoryRepository;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class MailServiceTest {
+
+    @Mock
+    private MailSendClient mailSendClient;
+
+    @Mock
+    private MailSendHistoryRepository mailSendHistoryRepository;
+
+    @InjectMocks
+    private MailService mailService;
+
+    @DisplayName("메일 전송 테스트")
+    @Test
+    void sendMail() throws Exception {
+        //given
+        when(mailService.sendMail(any(String.class), any(String.class), any(String.class), any(String.class))).thenReturn(true);
+
+        //when
+        boolean result = mailService.sendMail("", "", "", "");
+
+        //then
+        assertThat(result).isTrue();
+        Mockito.verify(mailSendHistoryRepository, times(1)).save(any(MailSendHistory.class));
+    }
+}
+``` 
+
+### @Spy
+``` java
+package sample.cafekiosk.spring.api.service.mail;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
+import sample.cafekiosk.spring.cliemt.mail.MailSendClient;
+import sample.cafekiosk.spring.domain.history.mail.MailSendHistory;
+import sample.cafekiosk.spring.domain.history.mail.MailSendHistoryRepository;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class MailServiceTest {
+
+    @Spy
+    private MailSendClient mailSendClient;
+
+    @Mock
+    private MailSendHistoryRepository mailSendHistoryRepository;
+
+    @InjectMocks
+    private MailService mailService;
+
+    @DisplayName("메일 전송 테스트")
+    @Test
+    void sendMail() throws Exception {
+        //given
+        doReturn(true)
+                .when(mailSendClient)
+                .sendEmail(any(String.class), any(String.class), any(String.class), any(String.class));
+
+
+        //when
+        boolean result = mailService.sendMail("", "", "", "");
+
+        //then
+        assertThat(result).isTrue();
+        Mockito.verify(mailSendHistoryRepository, times(1)).save(any(MailSendHistory.class));
+    }
+}
+``` 
