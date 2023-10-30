@@ -776,4 +776,15 @@ class MailServiceTest {
 ``` 
 
 
-## Classicist VS. Mockist
+### Classicist VS. Mockist
+
+#### Classicist
+- Classicist는 전통적인 테스트 방법이다. 코드가 동작하는지 확인하기 위해 실제 코드와 상호 작용하고 테스트하는 것에 중점을 줌
+- 꼭 필요할때만 Mocking를 사용하자!
+
+#### Mockist
+- Mockist 테스트는 종종 테스트 더블(test doubles)라고 알려진 가짜 객체를 사용하여 외부 의존성을 대하며, 의존성이 예상대로 상호 작용하는지 검증
+
+#### 언제 Mocking을 써야 되나~?
+- 외부 시스템일 경우 Mocking 처리 하는게 좋타!
+![](https://github.com/dididiri1/cafekiosk/blob/main/study/images/06_02.png?raw=true)
