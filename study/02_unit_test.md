@@ -788,3 +788,289 @@ class MailServiceTest {
 #### 언제 Mocking을 써야 되나~?
 - 외부 시스템일 경우 Mocking 처리 하는게 좋타!
 ![](https://github.com/dididiri1/cafekiosk/blob/main/study/images/06_02.png?raw=true)
+
+### 키워드 정리
+- Test Double, Stubbing
+  - dummmy, fake, stub, spy, mock
+- @Mock, @MockBean, @Spy, @SpyBean, @InjectMocks
+- BDDMockito
+- Classicist VS. Mockist
+
+# 섹션 7 더 나은 테스트를 작성하기 위한 구체적 조언
+
+## 한 문단에 한 주제
+- 한 가지 테스트에서는 한 가지 목적의 검증만 수행을 한다.
+
+## 완벽하게 제어하기
+
+## 테스트 환경의 독립성을 보장하자
+- 다른 API들을 끌어다가 사용할 경우 테스트 간 결합도가 생기는 케이스가 있을수 있으며, 그런 부분에서 독립성을 보장해야 된다.
+- 독립적으로 테스트 환경을 구성하고 최대한 독립성을 보장해서 구성하는게 제일 좋음
+- 밑에 코드를보며 deductQuantity todo 문제
+
+``` java
+    @DisplayName("재고가 부족한 상품으로 주문을 생성하려는 경우 예외가 발생한다.")
+    @Test
+    void createOrderWithNoStock() {
+        // given
+        LocalDateTime registeredDateTime = LocalDateTime.now();
+
+        Product product1 = createProduct(BOTTLE, "001", 1000);
+        Product product2 = createProduct(BAKERY, "002", 3000);
+        Product product3 = createProduct(HANDMADE, "003", 5000);
+        productRepository.saveAll(List.of(product1, product2, product3));
+
+        Stock stock1 = Stock.create("001", 2);
+        Stock stock2 = Stock.create("002", 2);
+        stock1.deductQuantity(1); // todo
+        stockRepository.saveAll(List.of(stock1, stock2));
+
+        OrderCreateServiceRequest request = OrderCreateServiceRequest.builder()
+                .productNumbers(List.of("001", "001", "002", "003"))
+                .build();
+
+        // when // then
+        assertThatThrownBy(() -> orderService.createOrder(request, registeredDateTime))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("재고가 부족한 상품이 있습니다.");
+    }
+
+    private Product createProduct(ProductType type, String productNumber, int price) {
+        return Product.builder()
+                .type(type)
+                .productNumber(productNumber)
+                .price(price)
+                .sellingStatus(SELLING)
+                .name("메뉴 이름")
+                .build();
+    }
+```
+
+
+### 생성자와 정적 팩토리 메소드
+- 정적 펙토르 메소드
+  - 장점1 : 생성자에 넘기는 메게변수 이름만으로는 반환될 객체의 특성을 설명하기 어렵지만, 정적 펙토리 메소드는  
+    이름 지을수 있어 객체 특성을 쉽게 표현할 수 있다.
+  - 장점2 : 인스턴스를 새로 생성하지 않아도 된다.
+``` java
+package sample.cafekiosk.spring.domain.stock;
+
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import sample.cafekiosk.spring.domain.BaseEntity;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Entity
+public class Stock extends BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String productNumber;
+
+    private int quantity;
+
+    
+    // 생성자
+    public Stock(String productNumber, int quantity) {
+        this.productNumber = productNumber;
+        this.quantity = quantity;
+    }
+
+    // 정적 펙토리 메소드
+    public static Stock create(String productNumber, int quantity) {
+        return Stock.builder()
+                .productNumber(productNumber)
+                .quantity(quantity)
+                .build();
+    }
+}
+
+``` 
+
+## 테스트 간 독립성을 보장하자
+
+### 두 가지 이상의 테스트가 하나의 자원을 공유할때 잘못된 얘
+- 테스트간에 순서는 무관해야 됨. A테스트가 수행된 이후 B테스트가 수행되어야 성공을 한다는 개념 자체가 없어야됨.
+- 각각 독립적으로 언제 수행이 되도 항상 같은 결과를 내야됨.
+- 공유 자원을 사용하는 경우에는 테스트 간 순서가 생길 수 있기 때문이다.
+``` java
+class StockTest {
+
+    private static final Stock stock = Stock.create("100", 1);
+
+    @DisplayName("재고의 수량이 제공된 수량보다 작은지 확인하다.")
+    @Test
+    void isQuantityLessThan() throws Exception {
+        //given
+        int quantity = 2;
+
+        //when
+        boolean result = stock.isQuantityLessThan(quantity);
+
+        //then
+        assertThat(result).isTrue();
+
+    }
+
+    @DisplayName("재고를 주어진 개수만큼 차감할 수 있다.")
+    @Test
+    void deductQuantity() throws Exception {
+        //given
+        int quantity = 1;
+
+        //when
+        stock.deductQuantity(quantity);
+
+        //then
+        assertThat(stock.getQuantity()).isEqualTo(0);
+    }
+}
+``` 
+
+``` java
+class StockTest {
+
+    @DisplayName("재고의 수량이 제공된 수량보다 작은지 확인하다.")
+    @Test
+    void isQuantityLessThan() throws Exception {
+        //given
+        Stock stock = Stock.create("001", 1);
+        int quantity = 2;
+
+        //when
+        boolean result = stock.isQuantityLessThan(quantity);
+
+        //then
+        assertThat(result).isTrue();
+
+    }
+
+    @DisplayName("재고를 주어진 개수만큼 차감할 수 있다.")
+    @Test
+    void deductQuantity() throws Exception {
+        //given
+        Stock stock = Stock.create("100", 1);
+        int quantity = 1;
+
+        //when
+        stock.deductQuantity(quantity);
+
+        //then
+        assertThat(stock.getQuantity()).isEqualTo(0);
+    }
+}
+```
+
+## 한 눈에 들어오는 Test Fixture 구성하기
+### Test Fixture
+
+- Fixture : 고정물, 고정되어 있는 물체
+- 테스트를 위해 원하는 상태로 고정시킨 일련의 객체
+
+## Test Fixture 클렌징 (3가지)
+
+### @Transactional
+
+### deleteAllInBatch
+- deleteAllInBatch는 테이블 전체를 벌크성으로 날릴 수 있는 메소드인데 지우는 순서를 잘 고려야해야 한다.
+- 외래키 조건이 걸려 있거나 조건들이 순서에 따라 영향을 받는다. 해서 어떤걸 먼저 순서를 고민해야되는게 단점이지만 deleteAll() 보다 성능이 좋다.
+
+``` java
+@AfterEach
+void tearDown() {
+    orderProductRepository.deleteAllInBatch();
+    productRepository.deleteAllInBatch();
+    orderRepository.deleteAllInBatch();
+}
+``` 
+
+### deleteAll
+- deleteAll의 장점은 Order를 지우고 Product를 지웠을때 Order를 지우면서 OrderProduct까지 같이 지워준다.
+- foreign key 맺고 있는 애들은 전부 찾아와서 select하고 하나씩 껀껀히 반복문을 돌면서 지워서 성능이 저하되는 단점이 있음.
+
+``` java
+@AfterEach
+void tearDown() {
+     orderRepository.deleteAll();
+     productRepository.deleteAll();
+}
+``` 
+
+#### 정리
+> @Transactional 편하니깐 써야지 보다는 상황의 맞쳐 잘 알고 써야된다.
+
+## @ParameterizedTest(파리미터라이즈 테스트)
+- 하나의 테스트 케이스데 값을 여러 개로 바꿔보면서 테스트를 하고 싶을때 사용
+
+### @ValueSource 방식
+- 파라미터 하나일 때 간단한 형태
+``` java
+class ProductTypeTest {
+
+    @ParameterizedTest
+    @ValueSource(ints = {1, 2, 3})
+    void testWithValueSource(int argument) throws Exception {
+        //then
+        assertThat(argument > 0 && argument < 4);
+    }
+    
+}
+```
+
+
+### @CsvSource 방식
+``` java
+class ProductTypeTest {
+     
+    @DisplayName("상품 타입이 재고 관련 타입인지를 체크한다.")
+    @CsvSource({"HANDMADE,false", "BOTTLE,true", "BAKERY,true"})
+    @ParameterizedTest
+    void containsStockType4(ProductType productType, boolean expected) throws Exception {
+        //when
+        boolean result = ProductType.containsStockType(productType);
+
+        //then
+        assertThat(result).isEqualTo(expected);
+    }
+}
+``` 
+
+### @MethodSource 방식
+- 이경우 프로덕션 코드에서는 private method를 보통 아래쪽에 명시하는 편인데. given의 역활이기 떄문에 테스트 바로 위에다가 명시할수도 있다.
+``` java
+class ProductTypeTest {
+     
+     private static Stream<Arguments> provideProductTypesForCheckingStockType() {
+        return Stream.of(
+                Arguments.of(ProductType.HANDMADE, false),
+                Arguments.of(ProductType.BOTTLE, true),
+                Arguments.of(ProductType.BAKERY, true)
+        );
+    }
+
+    @DisplayName("상품 타입이 재고 관련 타입인지를 체크한다.")
+    @MethodSource("provideProductTypesForCheckingStockType")
+    @ParameterizedTest
+    void containsStockType5(ProductType productType, boolean expected) throws Exception {
+        //when
+        boolean result = ProductType.containsStockType(productType);
+
+        //then
+        assertThat(result).isEqualTo(expected);
+    }
+    
+}
+``` 
+### 참고
+- [Junit5 Parameterized Tests](https://junit.org/junit5/docs/current/user-guide/#writing-tests-parameterized-tests)
+- [Spock Data Tables](https://spockframework.org/spock/docs/2.3/data_driven_testing.html#data-tables)

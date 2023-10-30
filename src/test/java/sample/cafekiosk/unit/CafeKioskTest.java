@@ -107,7 +107,6 @@ class CafeKioskTest {
     void createOrderWithCurrentTime() {
         CafeKiosk cafeKiosk = new CafeKiosk();
         Americano americano = new Americano();
-
         cafeKiosk.add(americano);
 
         Order order = cafeKiosk.createOrder(LocalDateTime.of(2023, 1, 17, 10, 0));
@@ -120,7 +119,6 @@ class CafeKioskTest {
     void createOrderOutsideOpenTime() {
         CafeKiosk cafeKiosk = new CafeKiosk();
         Americano americano = new Americano();
-
         cafeKiosk.add(americano);
 
         assertThatThrownBy(() -> cafeKiosk.createOrder(LocalDateTime.of(2023, 1, 17, 9, 59)))
