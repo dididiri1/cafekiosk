@@ -1125,3 +1125,153 @@ class StockTest {
 
 }
 ``` 
+
+## 테스트 수행도 비용이다. 환경 통합하기
+- 테스트를 작성하는 이유 중 하나는 사람이 수동하는 검증하는 비용보다 기계의 도움을 받아서 수시로 우리가 피드백을  
+  받고 우리의 프로덕션 코드를 발전시켜 나갈 수 있는 도구 
+- 해서 테스트 자체를 자주 수행하려면 테스트가 수행되는 시간이 다 비용기 떄문에 관리가 필요하다.
+
+``` java
+package sample.cafekiosk.spring;
+
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
+import sample.cafekiosk.spring.cliemt.mail.MailSendClient;
+
+@ActiveProfiles("test")
+@SpringBootTest
+public abstract class IntegrationTestSupport {
+
+    @MockBean
+    protected MailSendClient mailSendClient;
+}
+``` 
+
+``` java
+package sample.cafekiosk.spring;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.web.servlet.MockMvc;
+import sample.cafekiosk.spring.api.controller.order.OrderController;
+import sample.cafekiosk.spring.api.controller.product.ProductController;
+import sample.cafekiosk.spring.api.service.order.OrderService;
+import sample.cafekiosk.spring.api.service.product.ProductService;
+
+@WebMvcTest(controllers = {
+        OrderController.class,
+        ProductController.class
+})
+public abstract class ControllerTestSupport {
+
+    @Autowired
+    protected MockMvc mockMvc;
+
+    @Autowired
+    protected ObjectMapper objectMapper;
+
+    @MockBean
+    protected OrderService orderService;
+
+    @MockBean
+    protected ProductService productService;
+    
+}
+``` 
+
+## Q. private 메서드의 테스트는 어떻게 하나요?
+- 객체가 공개한 API들을 테스트하다 보면 자연스럽게 검증이 되기 떄문이다.  
+  만약에 욕망이 강하게 든다 객체 분리의 신호롸 봐야함.
+
+``` java
+package sample.cafekiosk.spring.api.service.product;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import sample.cafekiosk.spring.domain.product.ProductRepository;
+
+@RequiredArgsConstructor
+@Component
+public class ProductNumberFactory {
+
+    private final ProductRepository productRepository;
+
+    public String createNextProductNumber() {
+        String latestProductNumber = productRepository.findLatestProductNumber();
+        if (latestProductNumber == null) {
+            return "001";
+        }
+        int latestProductNumberInt = Integer.valueOf(latestProductNumber);
+        int nextProductNumberInt = latestProductNumberInt + 1;
+
+        return String.format("%03d", nextProductNumberInt);
+    }
+}
+``` 
+
+## Q. 테스트에서만 필요한 메서드가 생겼는데 프로덕션 코드에서는 필요 없다면?
+- Test에서만 사용하는 ① ProductCreateRequest 생성자
+- 있어도 상관없지만 **보수적**으로 접근하기!
+``` java
+package sample.cafekiosk.spring.api.controller.product.request;
+
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import sample.cafekiosk.spring.api.service.product.request.ProductCreateServiceRequest;
+import sample.cafekiosk.spring.domain.product.Product;
+import sample.cafekiosk.spring.domain.product.ProductSellingStatus;
+import sample.cafekiosk.spring.domain.product.ProductType;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
+
+@Getter
+@NoArgsConstructor
+public class ProductCreateRequest {
+
+    @NotNull(message = "상품 타입은 필수입니다.")
+    private ProductType type;
+
+    @NotNull(message = "상품 판매상태는 필수입니다.")
+    private ProductSellingStatus sellingStatus;
+
+    @NotBlank(message = "상품 이름은 필수입니다.")
+    private String name;
+
+    @Positive(message = "상품 가격은 양수여야 합니다.")
+    private int price;
+
+    @Builder // ①
+    private ProductCreateRequest(ProductType type, ProductSellingStatus sellingStatus, String name, int price) {
+        this.type = type;
+        this.sellingStatus = sellingStatus;
+        this.name = name;
+        this.price = price;
+    }
+
+    public ProductCreateServiceRequest toServiceRequest() {
+        return ProductCreateServiceRequest.builder()
+                .type(type)
+                .sellingStatus(sellingStatus)
+                .name(name)
+                .price(price)
+                .build();
+    }
+}
+``` 
+
+## 키워드 정리
+- 테스트 하나 당 목적은 하나!
+- 완벽한 제어
+- 테스트 환경의 독립성, 테스트 간 독립성
+- Test Fixture
+- deleteAll(), deleteAllInBatch()
+- @ParameterizedTest, @DynamicTest
+- 수행 환경 통합하기
+- private method test
+- 테스트에서만 필요한 코드

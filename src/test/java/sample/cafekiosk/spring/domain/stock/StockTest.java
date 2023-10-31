@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class StockTest {
 
-    @DisplayName("")
+    /*@DisplayName("")
     @TestFactory
     Collection<DynamicTest> dynamicTest() {
 
@@ -26,7 +26,7 @@ class StockTest {
 
                 })
         );
-    }
+    }*/
 
     @DisplayName("재고 차감 시나리오")
     @TestFactory

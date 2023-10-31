@@ -21,6 +21,8 @@ public class ProductService {
 
     private final ProductRepository productRepository;
 
+    private final ProductNumberFactory productNumberFactory;
+
     /**
      * productNumber 001 002 003 004
      * DB 에서 마지막 저장된 Product의 상품 번호를 읽어와서 +1
@@ -32,7 +34,7 @@ public class ProductService {
      */
     @Transactional
     public ProductResponse createProduct(ProductCreateServiceRequest request) {
-        String nextProductNumber = createNextProductNumber();
+        String nextProductNumber = productNumberFactory.createNextProductNumber();
         Product product = request.toEntity(nextProductNumber);
         Product saveProduct = productRepository.save(product);
 
@@ -47,7 +49,8 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
-    private String createNextProductNumber() {
+    // private 메소드 객체 분리 -> ProductNumberFactory 클래스로
+    /*private String createNextProductNumber() {
         String latestProductNumber = productRepository.findLatestProductNumber();
         if (latestProductNumber == null) {
             return "001";
@@ -57,5 +60,5 @@ public class ProductService {
 
         // 9 -> 009 10 -> 010
         return String.format("%03d", nextProductNumberInt);
-    }
+    }*/
 }
