@@ -1001,8 +1001,8 @@ void tearDown() {
 ``` java
 @AfterEach
 void tearDown() {
-     orderRepository.deleteAll();
-     productRepository.deleteAll();
+    orderRepository.deleteAll();
+    productRepository.deleteAll();
 }
 ``` 
 
@@ -1074,3 +1074,54 @@ class ProductTypeTest {
 ### 참고
 - [Junit5 Parameterized Tests](https://junit.org/junit5/docs/current/user-guide/#writing-tests-parameterized-tests)
 - [Spock Data Tables](https://spockframework.org/spock/docs/2.3/data_driven_testing.html#data-tables)
+
+## @DynamicTest
+- Runtime 중에 생성되는 동적 테스트이며, given 안에서 when이 연속적으로 이루어지는 형태를 가진다.
+- 일련의 시나리오를 테스트 하고 싶을때 단계별로 어떤 행위와 검증을 수행하고 싶을때 사용
+- @TestFactory 사용
+
+``` java
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.TestFactory;
+
+import java.util.Collection;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+class StockTest {
+    
+    @DisplayName("재고 차감 시나리오")
+    @TestFactory
+    Collection<DynamicTest> sockDeductionDynamicTest() throws Exception {
+        //given
+        Stock stock = Stock.create("001", 1);
+
+        return List.of(
+                DynamicTest.dynamicTest("재고를 주어진 개수만큼 차감할 수 있다.", () -> {
+                    //given
+                    int quantity = 1;
+
+                    //when
+                    stock.deductQuantity(quantity);
+
+                    //then
+                    assertThat(stock.getQuantity()).isZero();
+                }),
+                DynamicTest.dynamicTest("재고보다 많은 수의 수량으로 차감 시도하는 경우 예외가 발생한다.", () -> {
+                    //given
+                    int quantity = 1;
+
+                    //when then
+                    assertThatThrownBy(() -> stock.deductQuantity(quantity))
+                            .isInstanceOf(IllegalArgumentException.class)
+                            .hasMessage("차감할 재고 수량이 없습니다."); // 메세지 검증
+                })
+        );
+
+    }
+
+}
+``` 
