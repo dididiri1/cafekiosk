@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 class ProductNumberFactoryTest {
 
 
-    @DisplayName("")
+    @DisplayName("정적 추상 펙토리")
     @Test
     void createNextProductNumber() throws Exception {
         //given
