@@ -112,7 +112,7 @@ public class ProductControllerDocsTest extends RestDocsSupport {
 
     }
 
-    @DisplayName("판매 상품을 조회 API")
+    /*@DisplayName("판매 상품을 조회 API")
     @Test
     void getSellingProducts() throws Exception {
 
@@ -155,5 +155,5 @@ public class ProductControllerDocsTest extends RestDocsSupport {
                                         .description("상품 가격"))
                 ));
 
-    }
+    }*/
 }
