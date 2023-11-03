@@ -780,7 +780,6 @@ class MailServiceTest {
 }
 ``` 
 
-
 ### Classicist VS. Mockist
 
 #### Classicist
@@ -1281,7 +1280,7 @@ public class ProductCreateRequest {
 - private method test
 - 테스트에서만 필요한 코드
 
-# 섹션 8 Appendix
+## 섹션 8 Appendix
 
 - [Guava](https://github.com/google/guava)
 
@@ -1349,16 +1348,44 @@ public abstract class RestDocsSupport {
 
 #### 설정 2
 ``` java
+package sample.cafekiosk.spring.docs;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.restdocs.RestDocumentationContextProvider;
+import org.springframework.restdocs.RestDocumentationExtension;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
+
+@ExtendWith(RestDocumentationExtension.class)
+public abstract class RestDocsSupport {
+
+    protected MockMvc mockMvc;
+    protected ObjectMapper objectMapper = new ObjectMapper();
+
+    @BeforeEach
+    void setUp(RestDocumentationContextProvider provider) {
+        this.mockMvc = MockMvcBuilders.standaloneSetup(initController())
+                .apply(documentationConfiguration(provider))
+                .build();
+    }
+
+    protected abstract Object initController();
+}
 ``` 
 
 ### 참고
 - [Spring REST Docs](https://docs.spring.io/spring-restdocs/docs/current/reference/htmlsingle/)
 - [Asciidoctor](https://asciidoctor.org/)
 
-# 섹션 9 Outro
+## 섹션 9 Outro
 
-## 타엽하지 않는 마음
-### 까가이 보면 느리지만, 멀리보면 가장 빠르다.
+### 타엽하지 않는 마음
+#### 가까이 보면 느리지만, 멀리보면 가장 빠르다.
 
+### Reference
 
+* [Practical Testing: 실용적인 테스트 가이드](https://www.inflearn.com/course/practical-testing-%EC%8B%A4%EC%9A%A9%EC%A0%81%EC%9D%B8-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EA%B0%80%EC%9D%B4%EB%93%9C/dashboard)
